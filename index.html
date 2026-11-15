@@ -190,6 +190,14 @@ input,select,textarea{border-radius:10px!important}
 input[type=date],input[type=time]{border:1px solid var(--nw-line)!important}
 select{background-color:var(--nw-soft,#eceef1)}
 .actions,html[data-theme="dark"] .actions{background:color-mix(in srgb,var(--nw-bg,#eef2f8) 90%,transparent)}
+/* ===== توسيع الصفحة على الشاشات الكبيرة ===== */
+.wrap{max-width:1240px!important}
+@media (min-width:1000px){
+  #formView .card:has(#date) .grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .item .grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .item .grid .full{grid-column:auto}
+  .tabs{max-width:640px;margin-inline:auto}
+}
 </style>
 </head>
 <body>
