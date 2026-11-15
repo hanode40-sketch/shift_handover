@@ -897,6 +897,9 @@ async function doConfirm(){
   try{
     const j=await cloudPost({action:'confirm',id:cfRec.id,name,empId:$('cfId').value.trim(),note:$('cfNote').value.trim()});
     cfRec=j.record;renderConfirm();window.scrollTo({top:0,behavior:'smooth'});
+    // احتياط: نسجّل الاستلام في «سجل النشاط» من البرنامج نفسه عشان الإحصائيات ما تعتبره «بانتظار»
+    // (لو الـ Apps Script سجّله بعد، صفحات الإحصائيات تحسبه مرة وحدة)
+    if(!j.already&&window.NWAuth&&NWAuth.log){try{NWAuth.log('استلام وردية',cfRec.id,[cfRec.date,shName(cfRec.shift),gName(cfRec.garage)].filter(Boolean).join(' · '),'shift')}catch(_){}}
     toast(j.already?t_('tAlready'):t_('tConfirmed'));
   }catch(e){toast(e.message==='AUTH'?t_('tAuthConfirm'):t_('tConfirmFail'));b.disabled=false;b.textContent=t_('cfBtn')}
 }
