@@ -720,11 +720,12 @@ async function syncFromCloud(){
     const local=load(KEY,[]);const ids=new Set(j.items.map(x=>x.id));
     const merged=[...j.items,...local.filter(x=>!ids.has(x.id)&&x.pending)];
     merged.sort((a,b)=>(b.savedAt||'').localeCompare(a.savedAt||''));
-    store(KEY,merged);renderLog();
+    CLOUD_ERR='';store(KEY,merged);renderLog();
     if(editingId)showFormStatus(merged.find(x=>x.id===editingId));
     return true;
-  }catch(e){toast(t_('tCloudFail'));return false}
+  }catch(e){CLOUD_ERR=String(e&&e.message||e||'?').slice(0,160);renderLog();toast(t_('tCloudFail'));return false}
 }
+let CLOUD_ERR='';
 function confirmLink(id){
   if(!cloudUrl()||!/^https?:/.test(location.protocol))return '';
   return location.origin+location.pathname+'?confirm='+encodeURIComponent(id)+'&s='+encodeURIComponent(cloudUrl());
@@ -935,14 +936,15 @@ function renderLog(){
   const log=load(KEY,[]).filter(o=>garageAllowed(o.garage));const q=($('logSearch').value||'').trim();
   const list=log.filter(o=>!q||[o.date,o.shift,o.fromName,o.toName,o.receivedName,o.garage,...(o.ready||[]),...(o.spare||[]),...(o.broken||[]).map(b=>b.bus)].join(' ').includes(q));
   $('logCount').textContent=log.length;
-  $('logList').innerHTML=list.length?list.map(o=>{
+  const warn=CLOUD_ERR?`<div class="status pending" style="margin:0 0 12px;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap"><span>⚠️ ${LANG==='en'?'Could not load the latest handovers from Drive — this is the copy saved on this device':'ما قدرنا نجيب آخر التسليمات من Drive — المعروض هو النسخة المحفوظة على هذا الجهاز'}<br><small style="font-weight:400;opacity:.8">${esc(CLOUD_ERR)}</small></span><button class="btn primary sm" onclick="syncFromCloud()">${LANG==='en'?'Retry':'إعادة المحاولة'}</button></div>`:'';
+  $('logList').innerHTML=warn+(list.length?list.map(o=>{
     const st=o.status==='received'?`<span class="badge ok">${t_('bReceived')} ${esc(fmt(o.receivedAt))}</span>`:o.pending?`<span class="badge bad">${t_('bNotUploaded')}</span>`:`<span class="badge warn">${t_('bWaiting')}</span>`;
     return `<div class="log-item">
     <div><b>${esc(o.date)} — ${esc(shiftLbl(o.shift))}</b> ${o.garage?'· '+esc(gName(o.garage)):''}
       <div class="meta">${esc(o.fromName||'—')} ${LANG==='en'?'→':'←'} ${esc(o.receivedName||o.toName||'—')} · ${esc(o.time||'')}</div>
       <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">${st}<span class="badge">${t_('bReady')} ${(o.ready||[]).length}</span><span class="badge">${t_('bSpare')} ${(o.spare||[]).length}</span><span class="badge">${t_('bBroken')} ${(o.broken||[]).length}</span></div></div>
     <div class="row"><button class="btn light sm" onclick="pdfLog('${o.id}')">PDF</button><button class="btn light sm" onclick="openLog('${o.id}')">${t_('open')}</button><button class="btn danger sm" onclick="delLog('${o.id}')">${t_('del')}</button></div>
-  </div>`}).join(''):`<p class="hint">${t_('noLog')}</p>`;
+  </div>`}).join(''):`<p class="hint">${t_('noLog')}</p>`);
 }
 function pdfLog(id){const o=load(KEY,[]).find(x=>x.id===id);if(o)openSheet(o)}
 function openLog(id){const o=load(KEY,[]).find(x=>x.id===id);if(!o)return;editingId=id;showTab('form');fill(o);$('ackFrom').checked=true;showFormStatus(o);
